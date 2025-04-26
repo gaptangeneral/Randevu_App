@@ -1,0 +1,203 @@
+
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#4A6CF7">
+
+    {# title bloğunda site_settings yerine context processor'dan gelen site_adi kullanılmalı #}
+    <title>{{ site_adi|default:"Randevu Sistemi" }} - {% block title %}Randevu Sistemi{% endblock %}</title>
+
+    <link rel="icon" type="image/png" href="/static/images/favicon.png">
+    <link rel="apple-touch-icon" href="/static/images/apple-touch-icon.png">
+    
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: { DEFAULT: '#4A6CF7', dark: '#3B5DE7' },
+                        secondary: '#2E3856',
+                        success: '#13CE66',
+                        danger: '#FF4949',
+                        warning: '#FFC82C',
+                        info: '#1FB6FF',
+                        dark: '#1D2939',
+                        light: '#F9FAFC',
+                        gray: { 100: '#F5F7FA', 200: '#E6E8F0', 300: '#D3D9E3', 400: '#C0CCDA', 500: '#8492A6', 600: '#4F5B76', 700: '#1D2939' }
+                    },
+                    fontFamily: {
+                        sans: ['Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Open Sans', 'Helvetica Neue', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    
+</head>
+<body class="bg-gray-100 font-sans text-gray-700 overflow-x-hidden">
+    <header class="fixed top-0 left-0 right-0 h-16 bg-white shadow-md flex justify-between items-center px-4 z-50">
+
+        {# Sol Taraf (Boş veya başka bir şey eklenebilir) #}
+        <div class="flex-1">
+            {# Logo veya menü butonu buraya gelebilir isterseniz #}
+        </div>
+
+        {# Ortalanmış Logo ve Başlık #}
+        <div class="flex items-center justify-center flex-shrink-0"> {# justify-center ve flex-shrink-0 eklendi #}
+            <img src="{{ site_logo_url }}" alt="{{ site_adi|default:'Logo' }}" class="h-[52px] mr-3"> {# Boşluğu azalttım (mr-3) #}
+            <span class="font-semibold text-lg text-gray-800"> {# text-lg'yi span içine taşıdım #}
+                 {% block header_title %}{{ site_adi|default:"Site Başlığı" }}{% endblock %}
+            </span>
+        </div>
+
+        {# Sağ Taraf - Giriş/Çıkış ve Admin Linkleri #}
+        <div class="flex-1 flex items-center justify-end space-x-2">
+            {% if user.is_authenticated %}
+                {# Giriş yapılmışsa #}
+                 {# <span class="text-sm text-gray-600 dark:text-gray-300 hidden sm:inline">Hoşgeldin, {{ user.username }}</span> #}
+
+                {# --- ÇIKIŞ FORMU --- #}
+                <form method="post" action="{% url 'logout' %}" class="inline"> {# method="post" burada olmalı #}
+                    {% csrf_token %}
+                    <button type="submit" title="Çıkış Yap" class="w-10 h-10 flex items-center justify-center text-secondary rounded-full hover:bg-gray-100 focus:outline-none">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </form>
+                {# --- --- --- #}
+
+                {# Yönetim Paneline Git butonu (sadece superuser için) #}
+                 {% if user.is_superuser %}
+                 <a href="{% url 'randevu:admin_dashboard' %}" title="Yönetim Paneli" class="w-10 h-10 flex items-center justify-center text-secondary rounded-full hover:bg-gray-100">
+                     <i class="fas fa-tachometer-alt"></i>
+                 </a>
+                 {% endif %}
+            {% else %}
+                {# Giriş yapılmamışsa #}
+                 <a href="{% url 'login' %}" title="Giriş Yap" class="w-10 h-10 flex items-center justify-center text-secondary rounded-full hover:bg-gray-100">
+                     <i class="fas fa-sign-in-alt"></i>
+                </a>
+            {% endif %}
+        </div>
+        {# --- --- --- #}
+
+    </header>
+
+    {# pt-16 header yüksekliği kadar boşluk bırakır #}
+    <main class="container mx-auto pt-20 px-4 pb-4 min-full">
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <div class="fixed top-20 left-1/2 transform -translate-x-1/2 z-[100] w-11/12 max-w-md" id="toastContainer"></div> {# z-index artırıldı #}
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Mobile Safari specific setup for PWA feel
+            if (window.navigator.standalone) {
+                document.body.classList.add('standalone-mode');
+            }
+
+            // Show toast message function
+            window.showToast = function(type, title, message, duration = 4000) { // Süre artırıldı
+                const toastContainer = document.getElementById('toastContainer');
+                if (!toastContainer) return; // Konteyner yoksa çık
+                const toast = document.createElement('div');
+
+                const colors = {
+                    success: { border: 'border-green-500', icon: 'fa-check-circle', text: 'text-green-600' },
+                    error: { border: 'border-red-500', icon: 'fa-exclamation-circle', text: 'text-red-600' },
+                    warning: { border: 'border-yellow-500', icon: 'fa-exclamation-triangle', text: 'text-yellow-600' },
+                    info: { border: 'border-blue-500', icon: 'fa-info-circle', text: 'text-blue-600' }
+                };
+                const color = colors[type] || colors['info']; // Varsayılan info olsun
+
+                toast.className = `bg-white dark:bg-gray-700 border-l-4 ${color.border} rounded-md shadow-lg p-4 mb-3 flex items-start slideDown`;
+
+                toast.innerHTML = `
+                    <div class="mr-3 text-xl ${color.text}">
+                        <i class="fas ${color.icon}"></i>
+                    </div>
+                    <div class="flex-1">
+                        <div class="font-semibold text-gray-800 dark:text-white">${title}</div>
+                        <div class="text-gray-600 dark:text-gray-300 text-sm">${message}</div>
+                    </div>
+                    <button class="ml-3 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 text-lg">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+
+                toastContainer.appendChild(toast);
+
+                const closeBtn = toast.querySelector('button');
+                const closeToast = () => {
+                     toast.style.transition = 'opacity 0.3s ease-out';
+                     toast.style.opacity = '0';
+                     setTimeout(() => toast.remove(), 300);
+                };
+                closeBtn.addEventListener('click', closeToast);
+                const timer = setTimeout(closeToast, duration);
+                // Kullanıcı üzerine gelince kapanmayı durdur (isteğe bağlı)
+                toast.addEventListener('mouseenter', () => clearTimeout(timer));
+                toast.addEventListener('mouseleave', () => setTimeout(closeToast, duration)); // Tekrar başlatma yerine direkt kapat
+            };
+
+            // Show loading spinner (basitleştirilmiş)
+            window.showLoader = function() {
+                let loader = document.getElementById('globalLoader');
+                if (!loader) {
+                    loader = document.createElement('div');
+                    loader.id = 'globalLoader';
+                    loader.className = 'fixed inset-0 bg-gray-900 bg-opacity-50 flex justify-center items-center z-[200]'; // Daha yüksek z-index
+                    loader.innerHTML = '<div class="w-10 h-10 border-4 border-white border-t-transparent rounded-full spin"></div>';
+                    document.body.appendChild(loader);
+                }
+                loader.style.display = 'flex'; // Göster
+            };
+
+            window.hideLoader = function() {
+                const loader = document.getElementById('globalLoader');
+                if (loader) {
+                    loader.style.display = 'none'; // Gizle
+                }
+            };
+
+            // Pull-to-refresh (Mobil için kullanışlı)
+            // Bu kısım biraz karmaşık olabilir, şimdilik kaldırabilir veya bırakabilirsiniz.
+            // ... (pull-to-refresh kodu burada) ...
+
+             // Django mesajlarını toast olarak göster (sayfa yüklendiğinde)
+             {% if messages %}
+                {% for message in messages %}
+                    window.showToast(
+                        '{{ message.tags }}', // success, error, warning, info
+                        '{% if message.tags == "success"%}Başarılı!{% elif message.tags == "error"%}Hata!{% elif message.tags == "warning"%}Uyarı!{% else %}Bilgi{% endif %}', // Basit başlık
+                        '{{ message|escapejs }}' // Mesaj içeriği
+                    );
+                {% endfor %}
+             {% endif %}
+
+
+            // Add custom scripts from extending templates
+            
+        });
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
