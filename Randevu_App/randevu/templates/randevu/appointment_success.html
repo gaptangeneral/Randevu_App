@@ -1,0 +1,61 @@
+{% extends 'base.html' %} {# Ana şablonu miras alıyoruz #}
+{% load static %} {# Gerekirse diye ekliyoruz #}
+
+{% block title %}Randevu Başarılı{% endblock %} {# Sayfa başlığını ayarlıyoruz #}
+
+{% block content %} {# Ana içerik bloğunu dolduruyoruz #}
+    {# İçeriği ortalamak ve stil vermek için bir konteyner #}
+    <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg px-6 py-10 md:px-8 md:py-12 max-w-md mx-auto text-center mt-8 md:mt-12">
+
+        {# Başarı İkonu (Opsiyonel ama hoş durur) #}
+        <div class="mb-5">
+            {# Font Awesome ikonu, yeşil renkli, büyük boyutlu #}
+            <i class="fas fa-check-circle text-6xl text-green-500 dark:text-green-400"></i>
+        </div>
+
+        {# Ana Başarı Mesajı #}
+        <h1 class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-3">
+            Randevu Başarıyla Oluşturuldu!
+        </h1>
+
+        {# Alt Açıklama #}
+        <p class="text-gray-600 dark:text-gray-300 mb-6">
+            Randevu bilgileriniz sistemimize kaydedilmiştir.
+        </p>
+
+        {# Django Mesajları (Özellikle view'dan gelen success mesajı) #}
+        {% if messages %}
+            <div class="mb-6 space-y-3 text-left"> {# Mesajları sola yaslayalım #}
+                {% for message in messages %}
+                    {# Form sayfasındaki ile aynı stil #}
+                    <div class="p-4 rounded-md text-sm {% if message.tags == 'error' %}bg-red-100 border border-red-400 text-red-700 dark:bg-red-900 dark:border-red-700 dark:text-red-300{% elif message.tags == 'success' %}bg-green-100 border border-green-400 text-green-700 dark:bg-green-900 dark:border-green-700 dark:text-green-300{% else %}bg-blue-100 border border-blue-400 text-blue-700 dark:bg-blue-900 dark:border-blue-700 dark:text-blue-300{% endif %}" role="alert">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {# --- YENİ EKLENEN İPTAL KODU BÖLÜMÜ --- #}
+        {% if cancellation_code %}
+        <div class="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded relative mb-6 text-center" role="alert">
+            <strong class="font-bold block text-lg">Randevu İptal Kodunuz:</strong>
+            <span class="block text-2xl font-mono tracking-widest my-2">{{ cancellation_code }}</span>
+            <span class="block text-sm">Lütfen bu kodu saklayın. Randevunuzu daha sonra iptal etmek isterseniz bu kod gerekecektir.</span>
+        </div>
+        {% endif %}
+        {# --- --- --- #}
+
+        {# Yeni Randevu Alma Linki (Buton Görünümlü) #}
+        <div class="mt-8">
+             {# inline-block, renkler, padding, border-radius vb. ile buton stili #}
+            <a href="{% url 'randevu:appointment_create' %}" class="inline-block text-white bg-primary hover:bg-primary-dark focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-base px-6 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 transition duration-300 ease-in-out">
+                Yeni Randevu Al - İptal Et
+            </a>
+        </div>
+
+    </div> {# Ana konteyner sonu #}
+{% endblock %}
+
+{# Bu sayfa için özel JavaScript gerekmediğinden bu blok boş kalabilir #}
+{% block extra_js %}
+{% endblock %}

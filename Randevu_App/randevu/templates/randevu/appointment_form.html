@@ -1,0 +1,268 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Yeni Randevu Oluştur{% endblock %}
+
+{% block header_title %}Yeni Randevu{% endblock %}
+
+{% block content %}
+{# === Arka Plan Video ve Overlay === #}
+<div class="fixed inset-0 -z-20 overflow-hidden">
+    <video autoplay loop muted playsinline class="absolute inset-0 w-full h-full object-cover">
+        <source src="{% static 'videos/ai_video.mp4' %}" type="video/mp4">
+        Tarayıcınız video etiketini desteklemiyor.
+    </video>
+    <div class="absolute inset-0 bg-black/60"></div> {# Sadece overlay kaldı #}
+</div>
+{# === === === === === === === === #}
+
+{# Ana içerik konteyneri #}
+<div class="relative z-10 container mx-auto px-4 py-8 max-w-3xl">
+
+    {# Mesajlar İçin Alan #}
+    {% if messages %}
+        <div class="mb-6 space-y-3">
+            {% for message in messages %}
+                <div class="p-4 rounded-md text-sm {% if message.tags == 'error' %}bg-red-100 border border-red-400 text-red-700 dark:bg-red-900 dark:border-red-700 dark:text-red-300{% elif message.tags == 'success' %}bg-green-100 border border-green-400 text-green-700 dark:bg-green-900 dark:border-green-700 dark:text-green-300{% elif message.tags == 'warning' %}bg-yellow-100 border border-yellow-400 text-yellow-700 dark:bg-yellow-900 dark:border-yellow-700 dark:text-yellow-300{% else %}bg-blue-100 border border-blue-400 text-blue-700 dark:bg-blue-900 dark:border-blue-700 dark:text-blue-300{% endif %}" role="alert">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    {# Form (backdrop-blur-sm kaldırıldı) #}
+    <form method="post" action="{% url 'randevu:appointment_create' %}" id="appointmentForm" class="bg-white/90 dark:bg-gray-800/90 shadow-xl rounded-lg p-6 md:p-8"> {# backdrop-blur-sm kaldırıldı #}
+        {% csrf_token %}
+
+        {# Adım 1: Hizmet Seçimi #}
+        <div class="mb-8 border-b border-gray-200/50 dark:border-gray-700/50 pb-6">
+            <h2 class="text-xl text-gray-900 dark:text-white font-bold mb-4 flex items-center">
+                <span class="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center mr-3 text-sm font-semibold">1</span>
+                Hizmet Seçin <span class="text-red-500 ml-1">*</span>
+            </h2>
+            <div class="space-y-4">
+                {% if ordered_grouped_services %}
+                    {% for category_name, services_in_category in ordered_grouped_services %}
+                        <div>
+                            <h3 class="text-base font-semibold text-gray-800 dark:text-gray-200 mb-2 pt-2">
+                                {{ category_name }}
+                            </h3>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
+                                {% for service in services_in_category %}
+                                    <div class="flex items-center">
+                                        <input type="checkbox" id="service_{{ service.id }}" name="service" value="{{ service.id }}"
+                                               data-duration="{{ service.duration }}"
+                                               class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 cursor-pointer"
+                                               {% if service.pk|stringformat:"s" in selected_service_ids_str %}checked{% endif %}>
+                                        <label for="service_{{ service.id }}" class="ms-2 text-sm font-medium text-gray-900 dark:text-gray-300 cursor-pointer">
+                                            {{ service.name }} ({{ service.duration }} dk)
+                                            {% if service.price %} - {{ service.price|floatformat:2 }} TL {% endif %}
+                                        </label>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-gray-600 dark:text-gray-400">Aktif hizmet bulunmamaktadır.</p>
+                    {% if user.is_superuser %}
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                        Admin panelinden <a href="{% url 'admin:randevu_service_add' %}" class="text-blue-600 hover:underline">hizmet</a> veya
+                        <a href="{% url 'admin:randevu_servicecategory_add' %}" class="text-blue-600 hover:underline">kategori</a> ekleyebilirsiniz.
+                    </p>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+
+        {# Adım 2: Tarih Seçimi #}
+        <div class="mb-8 border-b border-gray-200/50 dark:border-gray-700/50 pb-6">
+            <h2 class="text-xl text-gray-900 dark:text-white font-bold mb-4 flex items-center">
+                <span class="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center mr-3 text-sm font-semibold">2</span>
+                Tarih Seçin <span class="text-red-500 ml-1">*</span>
+            </h2>
+            <input type="date" id="date" name="date" required
+                   value="{{ submitted_data.date|default:'' }}"
+                   min="{{ today_str }}" {# today_str context'te olmalı #}
+                   class="mt-1 block w-full md:w-1/2 py-2 px-3 border border-gray-300 bg-white/80 dark:bg-gray-700/80 dark:border-gray-600 dark:text-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+        </div>
+
+        {# Adım 3: Saat Seçimi #}
+        <div class="mb-8 border-b border-gray-200/50 dark:border-gray-700/50 pb-6">
+            <h2 class="text-xl text-gray-900 dark:text-white font-bold mb-4 flex items-center">
+                <span class="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center mr-3 text-sm font-semibold">3</span>
+                Saat Seçin <span class="text-red-500 ml-1">*</span>
+            </h2>
+            <div id="time-slots-container" class="mt-2">
+                <p class="text-sm text-gray-500 dark:text-gray-400 italic">Lütfen önce tarih ve hizmet seçin.</p>
+            </div>
+        </div>
+
+        {# Adım 4: Müşteri Bilgileri #}
+        <div class="mb-8">
+             <h2 class="text-xl text-gray-900 dark:text-white font-bold mb-4 flex items-center">
+                <span class="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center mr-3 text-sm font-semibold">4</span>
+                İletişim Bilgileriniz
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="customer_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Adınız Soyadınız <span class="text-red-500">*</span></label>
+                    <input type="text" id="customer_name" name="customer_name" required maxlength="100"
+                           value="{{ submitted_data.customer_name|default:'' }}"
+                           class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white/80 dark:bg-gray-700/80 dark:border-gray-600 dark:text-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                </div>
+                <div>
+                    <label for="customer_phone" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Telefon Numaranız <span class="text-red-500">*</span></label>
+                    <input type="tel" id="customer_phone" name="customer_phone" required maxlength="20"
+                           value="{{ submitted_data.customer_phone|default:'' }}"
+                           placeholder="Örn: 5xxxxxxxxx"
+                           class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white/80 dark:bg-gray-700/80 dark:border-gray-600 dark:text-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                </div>
+                <div class="md:col-span-2">
+                    <label for="customer_email" class="block text-sm font-medium text-gray-700 dark:text-gray-300">E-posta Adresiniz (İsteğe Bağlı)</label>
+                    <input type="email" id="customer_email" name="customer_email"
+                           value="{{ submitted_data.customer_email|default:'' }}"
+                           class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white/80 dark:bg-gray-700/80 dark:border-gray-600 dark:text-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                </div>
+            </div>
+        </div>
+
+        {# Gönderme Butonu #}
+        <div class="mt-8 text-center">
+            <button type="submit"
+                    class="inline-flex justify-center py-2 px-6 border border-transparent shadow-sm text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out">
+                Randevuyu Oluştur
+            </button>
+        </div>
+
+    </form>
+
+    {# İptal Bölümü (backdrop-blur-sm kaldırıldı) #}
+    <div class="mt-12 bg-gray-50/90 dark:bg-gray-900/90 p-6 rounded-lg shadow"> {# backdrop-blur-sm kaldırıldı #}
+         <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-3">Randevu İptali</h3>
+         <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+             Mevcut bir randevunuzu iptal etmek için size verilen 6 haneli iptal kodunu girin.
+         </p>
+         <form method="post" action="{% url 'randevu:appointment_lookup_cancel' %}">
+             {% csrf_token %}
+             <div class="flex items-center gap-3">
+                 <input type="text" name="cancellation_code" maxlength="6" required
+                        placeholder="İptal Kodu"
+                        class="block w-full max-w-xs py-2 px-3 border border-gray-300 bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm uppercase">
+                 <button type="submit"
+                         class="py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                     İptal Et
+                 </button>
+             </div>
+         </form>
+    </div>
+
+</div> {# Ana içerik konteyneri sonu #}
+{% endblock %}
+
+{% block extra_js %}
+{# JavaScript Kodu aynı kalır #}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("DOM Yüklendi. Randevu formu JS başlatılıyor.");
+
+    const dateInput = document.getElementById('date');
+    const serviceCheckboxes = document.querySelectorAll('input[name="service"][type="checkbox"]');
+    const timeSlotContainer = document.getElementById('time-slots-container');
+
+    if (!dateInput || !timeSlotContainer || serviceCheckboxes.length === 0) {
+        console.error("HATA: Form elementleri (tarih, saat konteyneri veya hizmet checkboxları) bulunamadı!");
+        if(timeSlotContainer) timeSlotContainer.innerHTML = '<p class="text-red-500">Form yüklenirken bir sorun oluştu. Lütfen sayfayı yenileyin.</p>';
+        return;
+    }
+
+    function fetchAvailableSlots() {
+        console.log("fetchAvailableSlots fonksiyonu çağrıldı.");
+
+        const selectedDate = dateInput.value;
+        const checkedServiceCheckboxes = document.querySelectorAll('input[name="service"][type="checkbox"]:checked');
+        const selectedServiceIds = [];
+        checkedServiceCheckboxes.forEach(checkbox => {
+            selectedServiceIds.push(checkbox.value);
+        });
+
+        console.log("-> Seçili Tarih:", selectedDate);
+        console.log("-> Seçili Hizmet ID'leri:", selectedServiceIds);
+
+        if (!selectedDate || selectedServiceIds.length === 0) {
+            console.log("--> Koşul sağlanmadı (Tarih veya Hizmet eksik).");
+            timeSlotContainer.classList.remove('grid', 'grid-cols-3', 'sm:grid-cols-4', 'md:grid-cols-5', 'gap-2');
+            timeSlotContainer.innerHTML = '<p class="text-sm text-gray-500 dark:text-gray-400 italic">Lütfen tarih ve en az bir hizmet seçin.</p>';
+            return;
+        }
+
+        console.log("--> Yükleniyor mesajı gösteriliyor, API isteği hazırlanıyor.");
+        timeSlotContainer.classList.remove('grid', 'grid-cols-3', 'sm:grid-cols-4', 'md:grid-cols-5', 'gap-2');
+        timeSlotContainer.innerHTML = '<p class="text-sm text-gray-500 dark:text-gray-400 my-2"><i class="fas fa-spinner fa-spin me-2"></i> Saatler yükleniyor...</p>';
+
+        const params = new URLSearchParams();
+        params.append('date', selectedDate);
+        selectedServiceIds.forEach(id => {
+            params.append('service_ids[]', id);
+        });
+        const apiUrl = `/randevu/api/available-slots/?${params.toString()}`;
+        console.log("--> API URL:", apiUrl);
+
+        fetch(apiUrl)
+            .then(response => {
+                console.log("--> API Yanıtı alındı. Status:", response.status);
+                if (!response.ok) {
+                    return response.json().then(err => {
+                        console.error("--> API Hata JSON'u:", err);
+                        throw new Error(err.error || `Sunucu hatası: ${response.status}`);
+                    }).catch(() => {
+                         console.error("--> API yanıtı OK değil ve JSON okunamadı.");
+                         throw new Error(`Sunucu hatası: ${response.status}`);
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log("--> API'den gelen JSON verisi:", data);
+                timeSlotContainer.innerHTML = '';
+
+                if (data.error) {
+                   console.warn("--> API'den hata mesajı alındı:", data.error);
+                   timeSlotContainer.innerHTML = `<p class="text-sm text-red-500">${data.error}</p>`;
+                } else if (data.available_slots && data.available_slots.length > 0) {
+                    console.log("--> Müsait saatler bulundu:", data.available_slots);
+                    timeSlotContainer.classList.add('grid', 'grid-cols-3', 'sm:grid-cols-4', 'md:grid-cols-5', 'gap-2');
+                    data.available_slots.forEach(slot => {
+                        const radioId = `time_${slot.replace(':', '')}`;
+                        const label = document.createElement('label');
+                        label.htmlFor = radioId;
+                        label.className = "cursor-pointer block border border-gray-300 dark:border-gray-600 rounded-md p-2 text-center text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 has-[:checked]:bg-blue-100 has-[:checked]:border-blue-500 has-[:checked]:text-blue-700 dark:has-[:checked]:bg-blue-900 dark:has-[:checked]:border-blue-700 dark:has-[:checked]:text-blue-300 transition-colors duration-150";
+                        label.innerHTML = `
+                            <input type="radio" id="${radioId}" name="selected_time_slot" value="${slot}" required
+                                   class="sr-only peer">
+                            <span class="peer-checked:font-semibold">${slot}</span>
+                        `;
+                        timeSlotContainer.appendChild(label);
+                    });
+                } else {
+                    console.log("--> Müsait saat bulunamadı.");
+                    timeSlotContainer.classList.remove('grid', 'grid-cols-3', 'sm:grid-cols-4', 'md:grid-cols-5', 'gap-2');
+                    timeSlotContainer.innerHTML = '<p class="text-sm text-gray-500 dark:text-gray-400">Seçilen tarih ve hizmetler için uygun saat bulunamadı.</p>';
+                }
+            })
+            .catch(error => {
+                console.error('--> API isteği veya JSON parse hatası:', error);
+                timeSlotContainer.classList.remove('grid', 'grid-cols-3', 'sm:grid-cols-4', 'md:grid-cols-5', 'gap-2');
+                timeSlotContainer.innerHTML = `<p class="text-sm text-red-500">Müsait saatler getirilirken bir hata oluştu.</p>`;
+            });
+    }
+
+    dateInput.addEventListener('change', fetchAvailableSlots);
+    serviceCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', fetchAvailableSlots);
+    });
+    console.log("Event listener'lar eklendi.");
+
+});
+</script>
+{% endblock extra_js %}

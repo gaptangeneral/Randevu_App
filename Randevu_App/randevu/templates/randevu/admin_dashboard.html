@@ -1,0 +1,157 @@
+{% extends 'base.html' %} {# Veya kendi admin base template'iniz varsa onu kullanın #}
+{% load static %}
+
+{% block title %}Admin Paneli{% endblock %}
+
+{% block header_title %}Yönetim Paneli{% endblock %} {# Header başlığını değiştirelim #}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+
+    {# Üst Bilgi #}
+    <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-6">Yönetim Paneli</h1>
+
+    {# Mesajlar İçin Alan #}
+    {% if messages %}
+        <div class="mb-6 space-y-3">
+            {% for message in messages %}
+                <div class="p-4 rounded-md text-sm {% if message.tags == 'error' %}bg-red-100 border border-red-400 text-red-700 dark:bg-red-900 dark:border-red-700 dark:text-red-300{% elif message.tags == 'success' %}bg-green-100 border border-green-400 text-green-700 dark:bg-green-900 dark:border-green-700 dark:text-green-300{% elif message.tags == 'warning' %}bg-yellow-100 border border-yellow-400 text-yellow-700 dark:bg-yellow-900 dark:border-yellow-700 dark:text-yellow-300{% else %}bg-blue-100 border border-blue-400 text-blue-700 dark:bg-blue-900 dark:border-blue-700 dark:text-blue-300{% endif %}" role="alert">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    {# === ANA LAYOUT GRID === #}
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+        {# --- SOL SÜTUN (Admin İşlemleri) --- #}
+        <div class="lg:col-span-1 bg-white dark:bg-gray-800 shadow-md rounded-lg p-6">
+            <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Yönetim İşlemleri</h2>
+            {# === Düzeltilmiş Liste Yapısı ve Stilli Linkler === #}
+            <ul class="space-y-3">
+                 <li>
+                     <a href="{% url 'admin:randevu_service_changelist' %}" class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                         <i class="fas fa-concierge-bell w-5 h-5 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"></i>
+                         <span class="ms-3">Hizmetleri Yönet</span>
+                     </a>
+                 </li>
+                 <li>
+                     <a href="{% url 'admin:randevu_workinghours_changelist' %}" class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                         <i class="fas fa-clock w-5 h-5 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"></i>
+                         <span class="ms-3">Çalışma Saatlerini Yönet</span>
+                     </a>
+                 </li>
+                 <li>
+                     <a href="{% url 'admin:randevu_appointment_changelist' %}" class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                          <i class="fas fa-calendar-check w-5 h-5 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"></i>
+                          <span class="ms-3">Tüm Randevuları Gör</span>
+                     </a>
+                 </li>
+                 <li>
+                     <a href="{% url 'admin:randevu_businesssettings_changelist' %}" class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                         <i class="fas fa-cog w-5 h-5 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"></i>
+                         <span class="ms-3">Site Ayarlarını Yönet</span>
+                     </a>
+                 </li>
+                 <li>
+                     <a href="{% url 'admin:auth_user_changelist' %}" class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                         <i class="fas fa-users w-5 h-5 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white"></i>
+                         <span class="ms-3">Kullanıcıları Yönet</span>
+                     </a>
+                 </li>
+            </ul>
+             {# === İç içe geçmiş hatalı div buradan silindi === #}
+        </div>
+
+        {# --- SAĞ SÜTUN (Randevular ve Grafikler) --- #}
+        <div class="lg:col-span-2 space-y-8">
+
+            {# === BURAYA TAŞINMIŞ RANDEVU BÖLÜMÜ === #}
+            <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6"> {# Eski mb-8 silindi, space-y-8 boşluk sağlıyor #}
+                <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Son Randevular (Beklemede/Onaylı)</h2>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                        <thead class="bg-gray-50 dark:bg-gray-700">
+                            <tr>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">ID</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Müşteri</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Telefon</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Hizmet</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Tarih / Saat</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Durum</th>
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">İşlem</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                            {% for appt in recent_appointments %}
+                            <tr>
+                                <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">#{{ appt.id }}</td>
+                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">{{ appt.customer_name }}</td>
+                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ appt.customer_phone }}</td>
+                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                    {# ManyToMany ilişkisindeki tüm hizmetlerin isimlerini virgülle ayırarak göster #}
+                                    {% for svc in appt.service.all %}
+                                        {{ svc.name }}{% if not forloop.last %}, {% endif %} {# Son hizmet değilse virgül ekle #}
+                                    {% empty %}
+                                        Hizmet Yok {# Eğer hiç hizmet atanmamışsa (olmamalı ama kontrol edelim) #}
+                                    {% endfor %}
+                                </td>                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ appt.start_time|date:"d.m.Y H:i" }}</td>
+                                <td class="px-4 py-3 whitespace-nowrap text-sm">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {% if appt.status == 'confirmed' %} bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 {% elif appt.status == 'pending' %} bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 {% elif appt.status == 'cancelled' %} bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 {% else %} bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200 {% endif %}">
+                                        {{ appt.get_status_display }}
+                                    </span>
+                                </td>
+                                <td class="px-4 py-3 whitespace-nowrap text-sm font-medium">
+                                    {% if appt.status != 'cancelled' %}
+                                    <a href="{% url 'randevu:admin_cancel_appointment' appt.id %}" class="text-red-600 hover:text-red-800 dark:text-red-500 dark:hover:text-red-400" onclick="return confirm('Bu randevuyu iptal etmek istediğinizden emin misiniz?');">İptal Et</a>
+                                    {% else %}
+                                    <span class="text-gray-400 dark:text-gray-500">İptal Edildi</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="7" class="px-4 py-4 text-center text-sm text-gray-500 dark:text-gray-400">Gösterilecek yeni randevu bulunamadı.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                 {# Dosyanın sonundaki fazlalık randevu div'i artık burada olduğu için oradan silinecek #}
+            </div>
+            {# === RANDEVU BÖLÜMÜ SONU === #}
+
+
+            {# === BURAYA TAŞINMIŞ GRAFİKLER BÖLÜMÜ === #}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {# Günlük Randevu Sayısı Grafiği #}
+                <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6">
+                     <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Son 7 Günlük Randevu Sayısı</h2>
+                     <div id="dailyAppointmentsChartApex" data-labels='{{ daily_labels }}' data-data='{{ daily_data }}'></div>
+                 </div>
+                 {# Hizmet Dağılımı Grafiği #}
+                 <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6">
+                     <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Hizmet Dağılımı (İptaller Hariç)</h2>
+                     <div id="serviceDistributionChartApex" data-labels='{{ service_labels }}' data-data='{{ service_data }}'></div>
+                 </div>
+            </div>
+            {# === GRAFİKLER BÖLÜMÜ SONU === #}
+             {# Dosyanın sonundaki fazlalık grafik div'i artık burada olduğu için oradan silinecek #}
+
+        </div> {# Sağ Sütun sonu #}
+
+    </div> {# Ana Grid sonu #}
+
+    {# !!! DOSYANIN SONUNDA KALAN ESKİ RANDEVU VE GRAFİK DIV'LERİNİ SİL !!! #}
+
+</div>
+{% endblock %}
+
+
+
+{% block extra_js %}
+
+<script src="{% static 'js/admin_charts.js' %}"></script>
+
+{% endblock %}
