@@ -99,8 +99,15 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'samiltrrt$Randevu_App', # Size verilen veritabanı adı
+        'USER': 'samiltrrt', # Size verilen kullanıcı adı
+        'PASSWORD': 'Raymond.1286', # Oluşturduğunuz şifre
+        'HOST': 'samiltrrt.mysql.pythonanywhere-services.com', # Size verilen host adresi
+        'PORT': '3306', # Genellikle 3306'dır
+        'OPTIONS': {
+            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'", # Önerilen ayar
+         },
     }
 }
 
