@@ -10,7 +10,7 @@ app_name = 'randevu' # URL isimleri için namespace tanımlıyoruz
 
 urlpatterns = [
     # Ana randevu oluşturma sayfası için URL
-    path('', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
+    path('', views.appointment_create_view, name='appointment_create'), # Giriş gerektirmiyor
     path('api/available-slots/', views.get_available_slots_api, name='api_available_slots'),
     path('basarili/', views.appointment_success_view, name='appointment_success'),
     path('iptal-kontrol/', views.appointment_lookup_cancel_view, name='appointment_lookup_cancel'),
