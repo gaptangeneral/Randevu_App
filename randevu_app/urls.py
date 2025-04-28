@@ -9,6 +9,8 @@ from django.contrib.auth import views as auth_views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('randevu/', include('randevu.urls', namespace='randevu')),
+    path('', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
+
     path(
         'hesap/giris/',
         auth_views.LoginView.as_view(template_name='registration/login.html'),
