@@ -10,7 +10,6 @@ asgiref==3.8.1
 tzdata==2024.1
 
 # Database Connector (PythonAnywhere MySQL için)
-mysqlclient==2.2.4
 # Eğer PostgreSQL kullanacaksanız bunun yerine:
 # psycopg2-binary==2.9.9
 
