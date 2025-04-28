@@ -1,6 +1,7 @@
 # randevu/urls.py
 
 from django.urls import path
+from django.contrib.auth import views as auth_views
 from . import views # randevu uygulamasının views.py dosyasını import et
 from django.contrib.auth.decorators import login_required, user_passes_test
 from .views import is_superuser # <<< --- BU SATIRI EKLEYİN ---
